@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from  scipy.integrate import cumtrapz
+plt.style.use('ggplot')
 
 
 k = 1.38064852e-23   # m^2 kg s^-2 K^-1, Boltzmann constant
@@ -163,6 +164,10 @@ class SQlim(object):
 
 
 def E_loss(Eg, xmin=300, xmax=2500, savefig=False):
+    if Eg>4.4 or Eg<0.32:
+        print "invalid bandgap \nvalid range: 0.32 to 4.4"
+        return None
+    xmax = max(xmax, 1240.0/Eg)
     WLs=np.arange(280,4001,1.0)
     AM15nm=np.interp(WLs, WL, solar_per_nm)
     plt.figure(figsize=(8,4.5))
@@ -226,7 +231,13 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
     """
     # 1-J : 1.337
     # 2-J : (1.63,0.96) or (1.8, 1.1)
-    # 3-J : (1.82, 1.16, 0.71) 
+    # 3-J : (1.82, 1.16, 0.71)
+    EgMax, Egmin = max(Egs), min(Egs)
+    if EgMax>4.4 or Egmin<0.32:
+        print "invalid bandgap \nvalid range: 0.32 to 4.4"
+        return None
+    xmax = max(xmax, 1240.0/Egmin)
+
 
     WLs=np.arange(280,4001,1.0)
     AM15nm=np.interp(WLs, WL, solar_per_nm)
