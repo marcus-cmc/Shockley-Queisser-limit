@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from  scipy.integrate import cumtrapz
 plt.style.use('ggplot')
+#plt.style.use(['ggplot','dark_background'])
 
 try: # use seaborn to choose better colors 
     import seaborn as sns
@@ -104,13 +105,18 @@ class SQlim(object):
         J =-1*Jsc + J0*(np.exp(q*V/(k*self.T))-1)
         mask = (J<=200)
         if plot:
+            title = "Theoretical JV for Eg={0} eV".format(round(Eg,2))
+            plt.figure()
             plt.plot(V[mask], J[mask],'r')
             plt.plot([-1,Eg],[0,0], 'k')
             plt.plot([0,0], [-2*Jsc,200],'k')
             plt.ylim(-1.5*Jsc, min(100, 1.5*Jsc))
             plt.xlim(-0.5,Eg)
-            plt.xlabel("Voltage (V)")
-            plt.ylabel("Current density (mA/$\mathregular{cm^2}$)")
+            plt.xlabel("Voltage (V)", fontsize=16)
+            plt.ylabel("Current density (mA/$\mathregular{cm^2}$)", fontsize=16)
+            plt.tick_params(labelsize=16)
+            plt.title(title)
+            plt.tight_layout()
         return np.vstack([V,J]) # col1: V, col2:J
         
         
@@ -171,9 +177,15 @@ class SQlim(object):
 
 
 def E_loss(Eg, xmin=300, xmax=2500, savefig=False):
+    """
+    input bandgap Eg, plot the energy loss and the available energy
+    return None
+    
+    """
     if Eg>4.4 or Eg<0.32:
         print "invalid bandgap \nvalid range: 0.32 to 4.4"
         return None
+        
     xmax = max(xmax, 1240.0/Eg)
     WLs=np.arange(280,4001,1.0)
     AM15nm=np.interp(WLs, WL, solar_per_nm)
@@ -193,10 +205,10 @@ def E_loss(Eg, xmin=300, xmax=2500, savefig=False):
     thermloss = therm-extract
     transloss = AM15nm*((1240.0/WLs)<Eg)
     
-    ax.fill_between(WLs, 0, transloss, facecolor=colors['trans'])
-    ax.fill_between(WLs, 0, therm, linewidth=0.5, facecolor=colors['therm'])
-    ax.fill_between(WLs, 0, extract, linewidth=0.2, facecolor=colors['extract'])
-    ax.fill_between(WLs, 0, Eavail, linewidth=0.2, facecolor=colors['avail'])
+    ax.fill_between(WLs, 0, transloss, linewidth=0, facecolor=colors['trans'])
+    ax.fill_between(WLs, 0, therm, linewidth=0, facecolor=colors['therm'])
+    ax.fill_between(WLs, 0, extract, linewidth=0, facecolor=colors['extract'])
+    ax.fill_between(WLs, 0, Eavail, linewidth=0, facecolor=colors['avail'])
     
     
     E_tot=np.sum(AM15nm)
@@ -214,7 +226,8 @@ def E_loss(Eg, xmin=300, xmax=2500, savefig=False):
     "{:.1f}% Available Energy".format(100.0*E_pct['avail'])]
 
     ax.plot([Eg],[0])
-    ax.legend(legends, labels, frameon=False, loc=(0.45,0.45))
+    ax.legend(legends, labels, frameon=False, 
+              fontsize=14, loc="upper right").draggable()
 
     ax.set_xlim(xmin, xmax)
     ax.set_ylabel("Irradiance  (W $\mathregular{m^{-2}\ nm^{-1}}$)", size=18)
@@ -231,10 +244,16 @@ def E_loss(Eg, xmin=300, xmax=2500, savefig=False):
 
 def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
     """
+    plot the theoretical maximum available energies from a series of 
+    solar cells with different Egs. 
+    Note: this is NOT the theoretical efficiencies for two-terminal 
+    tandem cells. It's more like mechanically stacked tandem cells.
+    
+    Egs: an array-like object of bandgaps; float/int are accepted too (one Eg)
+    
     E_MPP: whether to scale to MPP or not 
            False: Eavail = Eg * Jsc
            True : Eavail = Voc * Jsc *FF
-    blackbg: for slides with black background. fig with white ticks
     """
     # 1-J : 1.337
     # 2-J : (1.63,0.96) or (1.8, 1.1)
@@ -259,7 +278,7 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
     ax = plt.gca()
     # color options: darkgoldenrod, darkorange, yellow, black
     solarcolor = "gold"
-    ax.fill_between(WLs, 0, AM15nm, linewidth=0.5, facecolor=solarcolor)
+    ax.fill_between(WLs, 0, AM15nm, linewidth=0.0, facecolor=solarcolor)
                
     factor = 1.0 
     E_subcell = pd.DataFrame()
@@ -279,10 +298,6 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
         
     for n, Eg in enumerate(Egs[:-1]):
         color = colors[n]
-#        if with_sns:
-#            color = palette[n]
-#        else:
-#            color =  scalarMap.to_rgba(n)
         if E_MPP:
             SQ_E = SQlim(intensity=(Jscs[n]-Jscs[n+1])/Jscs[n])
             para = SQ_E.get_paras(Eg, toPrint=False)
@@ -291,7 +306,8 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
         Eavail = factor*AM15nm/(1240.0/WLs)*Eg*mask
         E_subcell["Eg="+str(round(Eg,3))] = Eavail
         PCEsubcell.append(100*np.sum(Eavail)/tot_E)
-        ax.fill_between(WLs, 0, Eavail, facecolor=color, linewidth=0.2)
+        ax.fill_between(WLs, 0, Eavail, facecolor=color, linewidth=0.0)
+        #ax.fill_between(WLs, 0, Eavail, facecolor=color, linewidth=0.2)
                          
     ax.set_xlim(xmin, xmax)
     ax.set_ylabel("Irradiance  (W $\mathregular{m^{-2}\ nm^{-1}}$)", size=18)
@@ -340,4 +356,27 @@ def Js_tandem(Es):
 
 if __name__=="__main__":
     SQ = SQlim()
+    
+
+### Examples  ####
+
+# plot Voc, Jsc, FF, PCE
+SQ.plotall() # plot Voc, Jsc, FF, PCE
+    
+# get Voc, Jsc, FF, PCE for a specific bandgap
+#SQ.get_paras(1.337)  # print out the values
+#SQ.get_paras(1.337, toPrint=False) # get a dictionary of parameters
+    
+
+# plot available energy and loss for a specific bandgap  
+#E_loss(1.3)  
+    
+# plot available energy for cells with many different bandgap materials
+#available_E([0.9, .6,1.5,1.2]) 
+
+### calculate and plot JV curve
+#SQ.Sim_JV(1.3, plot=True)
+
+    
+
 
