@@ -12,6 +12,13 @@ import matplotlib
 from  scipy.integrate import cumtrapz
 plt.style.use('ggplot')
 
+try: # use seaborn to choose better colors 
+    import seaborn as sns
+    with_sns = True
+except: # if you don't have seaborn
+    with_sns = False
+
+
 
 k = 1.38064852e-23   # m^2 kg s^-2 K^-1, Boltzmann constant
 h = 6.62607004e-34   # m^2 kg s^-1     , planck constant
@@ -232,11 +239,18 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
     # 1-J : 1.337
     # 2-J : (1.63,0.96) or (1.8, 1.1)
     # 3-J : (1.82, 1.16, 0.71)
+    
+    try: # if input Eg is a float or integer
+        l = len(Egs)
+    except:
+        l, Egs = 1, [Egs]
     EgMax, Egmin = max(Egs), min(Egs)
     if EgMax>4.4 or Egmin<0.32:
         print "invalid bandgap \nvalid range: 0.32 to 4.4"
         return None
     xmax = max(xmax, 1240.0/Egmin)
+    xmin = min(xmin, 1240.0/EgMax)
+    Egs  = sorted(list(Egs) + [4.5]) # add a dummy 4.5 eV, a dummy Jsc 0.0
 
 
     WLs=np.arange(280,4001,1.0)
@@ -246,12 +260,6 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
     # color options: darkgoldenrod, darkorange, yellow, black
     solarcolor = "gold"
     ax.fill_between(WLs, 0, AM15nm, linewidth=0.5, facecolor=solarcolor)
-
-
-    colors = [ ['LightSkyBlue'], 
-               ['lightcoral', 'LightSkyBlue'],
-               ['lightcoral', 'PaleGreen', 'LightSkyBlue'],
-               ['lightcoral', 'LimeGreen', 'LightSkyBlue', 'Magenta']]
                
     factor = 1.0 
     E_subcell = pd.DataFrame()
@@ -259,19 +267,22 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
     E_subcell["Solar"] = AM15nm
     PCEsubcell, tot_E = [], 1000.0
 
-    try:
-        l = len(Egs)
-    except:
-        l, Egs = 1, [Egs]
-    Egs  = sorted(list(Egs) + [4.5]) # add a dummy 4.5 eV, a dummy Jsc 0.0
     Jscs = [SQ.get_paras(E, toPrint=False)["Jsc"] for E in Egs[:-1]] + [0.0]
-    if l>4:
+
+    if with_sns:
+        colors = sns.color_palette("husl", len(Egs))
+    else:
         cm = plt.get_cmap('gist_rainbow') # gist_rainbow
         cNorm     = matplotlib.colors.Normalize(0, 1.2*(l-1))
         scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
-    
+        colors = [scalarMap.to_rgba(i) for i in xrange(l)]
+        
     for n, Eg in enumerate(Egs[:-1]):
-        color = colors[l-1][n] if l<=4 else scalarMap.to_rgba(n)
+        color = colors[n]
+#        if with_sns:
+#            color = palette[n]
+#        else:
+#            color =  scalarMap.to_rgba(n)
         if E_MPP:
             SQ_E = SQlim(intensity=(Jscs[n]-Jscs[n+1])/Jscs[n])
             para = SQ_E.get_paras(Eg, toPrint=False)
@@ -286,6 +297,16 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
     ax.set_ylabel("Irradiance  (W $\mathregular{m^{-2}\ nm^{-1}}$)", size=18)
     ax.set_xlabel("Wavelength (nm)",size=18)
     ax.tick_params(labelsize=16)
+    
+    legends = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[i], 
+                             edgecolor=None) for i in range(l)[::-1] ]
+    if l==1:
+        labels = ["Eg={0} eV, PCE={1:.1f}%".format(Egs[0], PCEsubcell[0])]
+    else:
+        labels = ["Cell {0}, Eg={1:.2f} eV, PCE={2:.1f}%".format(l-i, Egs[i], 
+                   PCEsubcell[i])  for i in range(l)[::-1]]
+    ax.legend(legends, labels, frameon=False, loc="upper right", 
+              fontsize=14).draggable() 
 
     plt.tight_layout()
     if savefig:
@@ -293,7 +314,7 @@ def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
         for E in Egs[:-1]:
             fname += "_{:.2f}".format(E) #str(round(Es,2))
         plt.savefig(fname+".pdf", transparent=True)
-
+    plt.show()
     return E_subcell, PCEsubcell
 
    
