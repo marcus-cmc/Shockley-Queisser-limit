@@ -46,6 +46,11 @@ AM15flux = AM15/(Es*eV) # number of photon m^-2 eV^-1
 
 class SQlim(object):
     def __init__(self, T=300, EQE_EL=1.0, intensity=1.0):
+        """
+        T: temperature in K
+        EQE_EL: radiative efficiency (EL quantum yield)
+        intensity: light concentration, 1.0 = one Sun, 100 mW/cm^2
+        """
         self.T = T
         self.EQE_EL=EQE_EL
         self.intensity = intensity
@@ -176,7 +181,7 @@ class SQlim(object):
 ###################### Useful functions for plotting results #######
 
 
-def E_loss(Eg, xmin=300, xmax=2500, savefig=False):
+def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     """
     input bandgap Eg, plot the energy loss and the available energy
     return None
@@ -238,11 +243,19 @@ def E_loss(Eg, xmin=300, xmax=2500, savefig=False):
     if savefig:
         plt.savefig("available_E.pdf", transparent=True)
 
-    return None
+    losses = pd.DataFrame()
+    losses["Wavelength"] = WLs
+    losses["Thermalization Loss"] = thermloss
+    losses["Extraction Loss"] = extractloss
+    losses["Not Absorbed"] = transloss
+    losses["Available"] = Eavail
+    
+    return losses
 
 
 
-def available_E(Egs, E_MPP=True, xmin=300, xmax=2500, savefig=False):
+def available_E(Egs, SQ=SQlim(), 
+                E_MPP=True, xmin=300, xmax=2500, savefig=False):
     """
     plot the theoretical maximum available energies from a series of 
     solar cells with different Egs. 
