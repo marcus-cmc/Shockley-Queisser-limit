@@ -13,7 +13,7 @@ from  scipy.integrate import cumtrapz
 plt.style.use('ggplot')
 #plt.style.use(['ggplot','dark_background'])
 
-try: # use seaborn to choose better colors 
+try: # use seaborn to choose better colors
     import seaborn as sns
     with_sns = True
 except: # if you don't have seaborn
@@ -35,7 +35,7 @@ WL, solar_per_nm = ref_solar.iloc[:,0], ref_solar.iloc[:,2] # WL (nm), W*m-2*nm-
 
 E = 1240.0/WL # eV
 # jacobian transformation, W m^-2 eV^-1
-solar_per_E= solar_per_nm*(eV/1e-9)*h*c/(eV*E)**2 
+solar_per_E= solar_per_nm*(eV/1e-9)*h*c/(eV*E)**2
 
 Es = np.arange(0.32, 4.401, 0.001)
 
@@ -56,7 +56,7 @@ class SQlim(object):
         self.intensity = intensity
         self.Es = np.arange(0.32, 4.401, 0.001)
         self.Calculate()
-    
+
     def Calculate(self):
         self.J0  = self.cal_E_J0()
         self.Jsc = self.cal_E_Jsc()
@@ -78,7 +78,10 @@ class SQlim(object):
         phi is the black body radiation at T (flux vs energy)
 
         '''
-        phi=2*np.pi*(self.Es*eV)**2*eV/(h**3*c**2)/(np.exp(self.Es*eV/(k*self.T))-1)
+        #phi=2*np.pi*(self.Es*eV)**2*eV/(h**3*c**2)/(np.exp(self.Es*eV/(k*self.T))-1)
+        phi = 2*np.pi*((self.Es*eV)**2)*eV/((h**3)*(c**2)) / (
+              np.exp(self.Es*eV/(k*self.T)) -1 )
+
         #fluxcumm = sp.integrate.cumtrapz(phi[::-1], self.Es[::-1], initial=0)
         fluxcumm = cumtrapz(phi[::-1], self.Es[::-1], initial=0)
         fluxaboveE = fluxcumm[::-1]*-1
@@ -123,8 +126,8 @@ class SQlim(object):
             plt.title(title)
             plt.tight_layout()
         return np.vstack([V,J]) # col1: V, col2:J
-        
-        
+
+
     def get_paras(self, Eg, toPrint=True):
         ''' input Eg, return or print the corresponding parameters
         '''
@@ -172,7 +175,7 @@ class SQlim(object):
             ax[axs[i]].plot(self.Es, ys[i])
             ax[axs[i]].set_ylabel(ylabel[i])
             plt.setp(ax[axs[i]].get_xticklabels(), visible=True)
-            ax[axs[i]].set_xlabel("Bandgap (eV)")       
+            ax[axs[i]].set_xlabel("Bandgap (eV)")
         ax[(0, 0)].set_xlim(xlims)
         plt.tight_layout()
         return
@@ -185,19 +188,19 @@ def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     """
     input bandgap Eg, plot the energy loss and the available energy
     return None
-    
+
     """
     if Eg>4.4 or Eg<0.32:
         print "invalid bandgap \nvalid range: 0.32 to 4.4"
         return None
-        
+
     xmax = max(xmax, 1240.0/Eg)
     WLs=np.arange(280,4001,1.0)
     AM15nm=np.interp(WLs, WL, solar_per_nm)
     plt.figure(figsize=(8,4.5))
     ax = plt.gca()
     # color options: darkgoldenrod, darkorange, yellow, black
-    colors = {'therm':'lightcoral', 'extract':'gold', 
+    colors = {'therm':'lightcoral', 'extract':'gold',
               'avail':'LightSkyBlue', 'trans':'grey'}
 
     para=SQ.get_paras(Eg, toPrint=False)
@@ -209,21 +212,21 @@ def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     extractloss = extract - Eavail
     thermloss = therm-extract
     transloss = AM15nm*((1240.0/WLs)<Eg)
-    
+
     ax.fill_between(WLs, 0, transloss, linewidth=0, facecolor=colors['trans'])
     ax.fill_between(WLs, 0, therm, linewidth=0, facecolor=colors['therm'])
     ax.fill_between(WLs, 0, extract, linewidth=0, facecolor=colors['extract'])
     ax.fill_between(WLs, 0, Eavail, linewidth=0, facecolor=colors['avail'])
-    
-    
+
+
     E_tot=np.sum(AM15nm)
     E_pct= {'trans':np.sum(transloss)/E_tot, 'therm':np.sum(thermloss)/E_tot,
             'extract': np.sum(extractloss)/E_tot, 'avail':np.sum(Eavail)/E_tot}
 
 
     legends = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[i], edgecolor=None)
-               for i in ['trans', 'therm', 'extract', 'avail'] ]  
-    
+               for i in ['trans', 'therm', 'extract', 'avail'] ]
+
     labels = [
     "{:.1f}% Not Absorbed".format(100.0*E_pct['trans']),
     "{:.1f}% Thermalization Loss".format(100.0*E_pct['therm']),
@@ -231,7 +234,7 @@ def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     "{:.1f}% Available Energy".format(100.0*E_pct['avail'])]
 
     ax.plot([Eg],[0])
-    ax.legend(legends, labels, frameon=False, 
+    ax.legend(legends, labels, frameon=False,
               fontsize=14, loc="upper right").draggable()
 
     ax.set_xlim(xmin, xmax)
@@ -249,36 +252,36 @@ def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     losses["Extraction Loss"] = extractloss
     losses["Not Absorbed"] = transloss
     losses["Available"] = Eavail
-    
+
     return losses
 
 
 
-def available_E(Egs, SQ=SQlim(), 
+def available_E(Egs, SQ=SQlim(),
                 E_MPP=True, xmin=300, xmax=2500, savefig=False):
     """
-    plot the theoretical maximum available energies from a series of 
-    solar cells with different Egs. 
-    Note: this is NOT the theoretical efficiencies for two-terminal 
+    plot the theoretical maximum available energies from a series of
+    solar cells with different Egs.
+    Note: this is NOT the theoretical efficiencies for two-terminal
     tandem cells. It's more like mechanically stacked tandem cells.
-    
+
     Egs: an array-like object of bandgaps; float/int are accepted too (one Eg)
-    
-    E_MPP: whether to scale to MPP or not 
+
+    E_MPP: whether to scale to MPP or not
            False: Eavail = Eg * Jsc
            True : Eavail = Voc * Jsc *FF
     """
     # 1-J : 1.337
     # 2-J : (1.63,0.96) or (1.8, 1.1)
     # 3-J : (1.82, 1.16, 0.71)
-    
+
     try: # if input Eg is a float or integer
         l = len(Egs)
     except:
         l, Egs = 1, [Egs]
     EgMax, Egmin = max(Egs), min(Egs)
-    if EgMax>4.4 or Egmin<0.32:
-        print "invalid bandgap \nvalid range: 0.32 to 4.4"
+    if EgMax > 4.2 or Egmin<0.32:
+        print "invalid bandgap \nvalid range: 0.32 to 4.2 eV"
         return None
     xmax = max(xmax, 1240.0/Egmin)
     xmin = min(xmin, 1240.0/EgMax)
@@ -292,8 +295,8 @@ def available_E(Egs, SQ=SQlim(),
     # color options: darkgoldenrod, darkorange, yellow, black
     solarcolor = "gold"
     ax.fill_between(WLs, 0, AM15nm, linewidth=0.0, facecolor=solarcolor)
-               
-    factor = 1.0 
+
+    factor = 1.0
     E_subcell = pd.DataFrame()
     E_subcell["WL"] = WLs
     E_subcell["Solar"] = AM15nm
@@ -308,7 +311,7 @@ def available_E(Egs, SQ=SQlim(),
         cNorm     = matplotlib.colors.Normalize(0, 1.2*(l-1))
         scalarMap = matplotlib.cm.ScalarMappable(norm=cNorm, cmap=cm)
         colors = [scalarMap.to_rgba(i) for i in xrange(l)]
-        
+
     for n, Eg in enumerate(Egs[:-1]):
         color = colors[n]
         if E_MPP:
@@ -321,21 +324,21 @@ def available_E(Egs, SQ=SQlim(),
         PCEsubcell.append(100*np.sum(Eavail)/tot_E)
         ax.fill_between(WLs, 0, Eavail, facecolor=color, linewidth=0.0)
         #ax.fill_between(WLs, 0, Eavail, facecolor=color, linewidth=0.2)
-                         
+
     ax.set_xlim(xmin, xmax)
     ax.set_ylabel("Irradiance  (W $\mathregular{m^{-2}\ nm^{-1}}$)", size=18)
     ax.set_xlabel("Wavelength (nm)",size=18)
     ax.tick_params(labelsize=16)
-    
-    legends = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[i], 
+
+    legends = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[i],
                              edgecolor=None) for i in range(l)[::-1] ]
     if l==1:
         labels = ["Eg={0} eV, PCE={1:.1f}%".format(Egs[0], PCEsubcell[0])]
     else:
-        labels = ["Cell {0}, Eg={1:.2f} eV, PCE={2:.1f}%".format(l-i, Egs[i], 
+        labels = ["Cell {0}, Eg={1:.2f} eV, PCE={2:.1f}%".format(l-i, Egs[i],
                    PCEsubcell[i])  for i in range(l)[::-1]]
-    ax.legend(legends, labels, frameon=False, loc="upper right", 
-              fontsize=14).draggable() 
+    ax.legend(legends, labels, frameon=False, loc="upper right",
+              fontsize=14).draggable()
 
     plt.tight_layout()
     if savefig:
@@ -346,7 +349,7 @@ def available_E(Egs, SQ=SQlim(),
     plt.show()
     return E_subcell, PCEsubcell
 
-   
+
 
 def Concentration(Suns=[1,10,100,1000]):
     for sun in sorted(Suns,reverse=True):
@@ -358,38 +361,40 @@ def Concentration(Suns=[1,10,100,1000]):
     ax=plt.gca()
     ax.legend(loc='upper right').draggable()
     plt.tight_layout()
-    
+
 
 def Js_tandem(Es):
-    P=[0]+[SQ.get_paras(E, toPrint=False)["Jsc"] 
+    P=[0]+[SQ.get_paras(E, toPrint=False)["Jsc"]
            for E in sorted(Es,reverse=True)]
     J=[p-P[n]for n,p in enumerate(P[1:])][::-1]
     return np.round(np.array(J),2)
 
 
+
+
 if __name__=="__main__":
     SQ = SQlim()
-    
+
 
 ### Examples  ####
 
 # plot Voc, Jsc, FF, PCE
-SQ.plotall() # plot Voc, Jsc, FF, PCE
-    
+#SQ.plotall() # plot Voc, Jsc, FF, PCE
+
 # get Voc, Jsc, FF, PCE for a specific bandgap
 #SQ.get_paras(1.337)  # print out the values
 #SQ.get_paras(1.337, toPrint=False) # get a dictionary of parameters
-    
 
-# plot available energy and loss for a specific bandgap  
-#E_loss(1.3)  
-    
+
+# plot available energy and loss for a specific bandgap
+#E_loss(1.3)
+
 # plot available energy for cells with many different bandgap materials
-#available_E([0.9, .6,1.5,1.2]) 
+#available_E([0.9, .6,1.5,1.2])
 
 ### calculate and plot JV curve
 #SQ.Sim_JV(1.3, plot=True)
 
-    
+
 
 
