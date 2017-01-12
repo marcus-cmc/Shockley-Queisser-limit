@@ -21,7 +21,7 @@ except: # if you don't have seaborn
 
 
 
-k = 1.38064852e-23   # m^2 kg s^-2 K^-1, Boltzmann constant
+k = 1.38064852e-23   # m^2 kg s^-2 K^-1, Boltzmi constant
 h = 6.62607004e-34   # m^2 kg s^-1     , planck constant
 c = 2.99792458e8     # m s^-1          , speed of light
 eV= 1.6021766208e-19 # joule           , eV to joule
@@ -37,7 +37,7 @@ E = 1240.0/WL # eV
 # jacobian transformation, W m^-2 eV^-1
 solar_per_E= solar_per_nm*(eV/1e-9)*h*c/(eV*E)**2
 
-Es = np.arange(0.32, 4.401, 0.001)
+Es = np.arange(0.32, 4.401, 0.002)
 
 # linear interpolation to get an equally spaced spectrum
 AM15 = np.interp(Es, E[::-1], solar_per_E[::-1]) # W m^-2 eV^-1
@@ -52,17 +52,20 @@ class SQlim(object):
         intensity: light concentration, 1.0 = one Sun, 100 mW/cm^2
         """
         self.T = T
-        self.EQE_EL=EQE_EL
+        self.EQE_EL = EQE_EL
         self.intensity = intensity
-        self.Es = np.arange(0.32, 4.401, 0.001)
+        self.Es = Es #np.arange(0.32, 4.401, 0.002)
         self.Calculate()
 
     def Calculate(self):
-        self.J0  = self.cal_E_J0()
-        self.Jsc = self.cal_E_Jsc()
-        self.Voc = self.cal_E_Voc()
-        self.PCE = self.cal_E_PCE()
-        self.FF  = self.PCE/(self.Voc*self.Jsc)*100.0*self.intensity  # unit:%
+        self.J0  = self.cal_E_J0() # dark saturation current density
+        self.Jsc = self.cal_E_Jsc() # shor-circuit current density
+        self.Voc = self.cal_E_Voc() # open circuit voltage
+        self.PCE = self.cal_E_PCE() # power conversion efficiency
+        # flll factor (%)
+        self.FF  = self.PCE/(self.Voc*self.Jsc)*100.0*self.intensity
+        self.paras = {"Voc": self.Voc, "Jsc": self.Jsc, "J0": self.J0,
+                      "FF": self.FF, "PCE": self.PCE}
         return None
 
     def cal_E_Jsc(self):
@@ -98,12 +101,12 @@ class SQlim(object):
     def cal_E_PCE(self):
         PCE = []
         for i, E in enumerate(self.Es):
-            V = np.arange(0, E, 0.001)
+            V = np.arange(0, E, 0.001) # can change upperbound to Voc
             J =-1*self.Jsc[i] +self.J0[i]*(np.exp(q*V/(k*self.T))-1)
             PCE.append(-1*np.min(J*V)/self.intensity)
         return PCE
 
-    def Sim_JV(self, Eg, Vstep=0.001, plot=False, Vmin=-0.5):
+    def Sim_JV(self, Eg, Vstep=0.001, plot=True, Vmin=-0.5):
         if not self.Es[0] <= Eg <= self.Es[-1]:
             print "invalid bandgap \nvalid range: 0.32 to 4.4"
             return
@@ -113,13 +116,16 @@ class SQlim(object):
         J =-1*Jsc + J0*(np.exp(q*V/(k*self.T))-1)
         mask = (J<=200)
         if plot:
-            title = "Theoretical JV for Eg={0} eV".format(round(Eg,2))
+            # to do:
+            # could modify the method to take xlim, ylim as inputs
+            # move 'title' into the figure and add add Voc Jsc FF, PCE to it
+            title = "Theoretical J-V for Eg = {:.3f} eV".format(Eg)
             plt.figure()
             plt.plot(V[mask], J[mask],'r')
             plt.plot([-1,Eg],[0,0], 'k')
             plt.plot([0,0], [-2*Jsc,200],'k')
-            plt.ylim(-1.5*Jsc, min(100, 1.5*Jsc))
-            plt.xlim(-0.5,Eg)
+            plt.ylim(-1.5*Jsc, min(40, 1.5*Jsc))
+            plt.xlim(-0.25, Eg)
             plt.xlabel("Voltage (V)", fontsize=16)
             plt.ylabel("Current density (mA/$\mathregular{cm^2}$)", fontsize=16)
             plt.tick_params(labelsize=16)
@@ -140,18 +146,19 @@ class SQlim(object):
         PCE = np.interp([Eg], self.Es, self.PCE)[0]
         J0  = np.interp([Eg], self.Es, self.J0)[0]
         if toPrint:
-            print "Bandgap: %.3f eV ;"  % Eg, "J0=%.3g mA/cm^2" % J0, "\n"
-            print "Voc = %.4g \t V"       % Voc
-            print "Jsc = %.4g \t mA/cm^2" % Jsc
-            print "FF  = %.2f \t %%"      % FF
-            print "PCE = %.3f \t %%"      % PCE
+            print
+            print "Bandgap: {0:.3f} eV ; J0 = {1:.3g} mA/cm^2\n".format(Eg, J0)
+            print "Voc = {0:.4g} \t V".format(Voc)
+            print "Jsc = {0:.4g} \t mA/cm^2".format(Jsc)
+            print "FF  = {0:.2f} \t %".format(FF)
+            print "PCE = {0:.3f} \t %".format(PCE)
             return
-        para={}
-        para["Voc"]=Voc
-        para["Jsc"]=Jsc
-        para["FF"] =FF
-        para["PCE"]=PCE
-        para["J0"]=J0
+        para = {}
+        para["Voc"] = Voc
+        para["Jsc"] = Jsc
+        para["FF"] = FF
+        para["PCE"] = PCE
+        para["J0"] = J0
         return para
 
     def saveall(self, savename="SQ limit"):
@@ -165,9 +172,30 @@ class SQlim(object):
         result.to_csv(savename+".csv", index=False)
         return result
 
-    def plotall(self, xlims=(0.32,3.0)):
+    def plot(self, para = "PCE", xlims=[0.32, 4.5]):
+        if para not in self.paras:
+            print "Invalid input! Valid inputs are:"
+            print '"Voc", "Jsc", "FF", "PCE", and "J0"'
+            return
+        yunits = {"Voc": "(V)", "Jsc" : "(mA/$\mathregular{cm^2}$)",
+                  "FF" : "(%)", "J0" : "(mA/$\mathregular{cm^2}$)",
+                  "PCE": "(%)"}
+        plt.figure(para)
+        ax = plt.gca()
+        ax.plot(self.Es, self.paras[para])
 
-        fig, ax = plt.subplots(2,2, sharex=True)
+        if para == "J0":
+            ax.set_yscale('log')
+        ax.set_ylabel(para + " " + yunits[para], size=18)
+        ax.set_xlim(xlims)
+        ax.set_xlabel("Bandgap (eV)", size=18)
+        ax.tick_params(labelsize=16)
+        plt.tight_layout()
+        return
+
+    def plotall(self, xlims=(0.32, 3.0)):
+
+        fig, ax = plt.subplots(2,2, sharex=True) #figsize=(8, 8)
         axs=[(0,0), (0,1), (1,0), (1,1)]
         ys = [self.Voc, self.Jsc, self.FF, self.PCE]
         ylabel=["Voc (V)","Jsc (mA/$\mathregular{cm^2}$)","FF (%)","PCE (%)"]
@@ -187,10 +215,10 @@ class SQlim(object):
 def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     """
     input bandgap Eg, plot the energy loss and the available energy
-    return None
-
+    SQ: an SQlim object, if not provided, use default standard condition
+    return a dictionary containing the energy losses
     """
-    if Eg>4.4 or Eg<0.32:
+    if Eg > 4.4 or Eg < 0.32:
         print "invalid bandgap \nvalid range: 0.32 to 4.4"
         return None
 
@@ -223,7 +251,7 @@ def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     E_pct= {'trans':np.sum(transloss)/E_tot, 'therm':np.sum(thermloss)/E_tot,
             'extract': np.sum(extractloss)/E_tot, 'avail':np.sum(Eavail)/E_tot}
 
-
+    legendtitle = "Banggap = {0:.3f} eV".format(Eg)
     legends = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[i], edgecolor=None)
                for i in ['trans', 'therm', 'extract', 'avail'] ]
 
@@ -234,8 +262,10 @@ def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     "{:.1f}% Available Energy".format(100.0*E_pct['avail'])]
 
     ax.plot([Eg],[0])
-    ax.legend(legends, labels, frameon=False,
+    ax.legend(legends, labels, frameon=False, title = legendtitle,
               fontsize=14, loc="upper right").draggable()
+    ax.get_legend().get_title().set_fontsize(14)
+
 
     ax.set_xlim(xmin, xmax)
     ax.set_ylabel("Irradiance  (W $\mathregular{m^{-2}\ nm^{-1}}$)", size=18)
@@ -266,7 +296,7 @@ def available_E(Egs, SQ=SQlim(),
     tandem cells. It's more like mechanically stacked tandem cells.
 
     Egs: an array-like object of bandgaps; float/int are accepted too (one Eg)
-
+    SQ: an SQlim object, if not provided, use default standard condition
     E_MPP: whether to scale to MPP or not
            False: Eavail = Eg * Jsc
            True : Eavail = Voc * Jsc *FF
@@ -351,16 +381,43 @@ def available_E(Egs, SQ=SQlim(),
 
 
 
-def Concentration(Suns=[1,10,100,1000]):
-    for sun in sorted(Suns,reverse=True):
-        plt.plot(Es, SQlim(intensity=sun).PCE, label = str(sun)+" sun")
-    plt.xlabel("Bandgap (eV)", size=28)
-    plt.ylabel("Efficiency (%)", size=28)
-    plt.xlim(0.3,3.0)
-    plt.tick_params(labelsize=24)
+def __helper_plt(xlim):
+    plt.xlabel("Bandgap (eV)", size=20)
+    plt.ylabel("Efficiency (%)", size=20)
+    plt.xlim(xlim)
+    plt.tick_params(labelsize=18)
     ax=plt.gca()
-    ax.legend(loc='upper right').draggable()
+    ax.legend(loc='upper right', fontsize=16).draggable()
     plt.tight_layout()
+    return
+
+
+def VaryTemp(T = [150, 200, 250, 300, 350], xlim = [0.3, 4.0]):
+    plt.figure()
+    SQs = [SQlim(T=temp) for temp in sorted(T)]
+    for SQ in SQs:
+        plt.plot(Es, SQ.PCE, label = "T = {} K".format(SQ.T))
+        __helper_plt(xlim)
+    return SQs
+
+def VaryEQE_EL(EQE_EL = [1E-6, 1E-4, 1E-2, 1], xlim = [0.3, 4.0]):
+    plt.figure()
+    SQs = [SQlim(EQE_EL=EQE) for EQE in sorted(EQE_EL, reverse = True)]
+    for SQ in SQs:
+        strEQE = "{:0.2E}".format(SQ.EQE_EL)
+        num, expo = strEQE[:4], str(int(strEQE[5:]))
+        plt.plot(Es, SQ.PCE,
+                 label = r"$EQE_{EL} = %s \times 10^{%s}$" % (num, expo))
+        __helper_plt(xlim)
+    return SQs
+
+def VarySuns(Suns=[1,10,100,1000], xlim = [0.3, 4.0]):
+    plt.figure()
+    SQs = [SQlim(intensity=sun) for sun in sorted(Suns, reverse=True)]
+    for SQ in SQs:
+        plt.plot(Es, SQ.PCE, label = "{:4G} sun".format(SQ.intensity))
+        __helper_plt(xlim)
+    return SQs
 
 
 def Js_tandem(Es):
@@ -373,7 +430,11 @@ def Js_tandem(Es):
 
 
 if __name__=="__main__":
+    plt.close('all')
     SQ = SQlim()
+    #SQ.plotall()
+    #for p in SQ.paras:
+    #    SQ.plot(p)
 
 
 ### Examples  ####
