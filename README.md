@@ -69,8 +69,7 @@ The data can be saved as a single .csv file
 SQ.saveall(savename = "SQ lim")
 ```
 
-The data can be accessed here: [SQ limi data]("/SQ limit.csv")
-
+The data can be accessed here: [SQ limit data](https://github.com/marcus-cmc/Theoretical_Solar_Cell_Efficiencies/blob/master/SQ%20limit.csv)
 
 #
 # Visualize more interesting results
