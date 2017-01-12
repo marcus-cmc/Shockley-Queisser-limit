@@ -17,6 +17,10 @@ SQ.plot('PCE')
 
 <img src="/ExampleOutputFig/PCE.png" width="600">
 
+
+The efficiencies will be in the `SQ.PCE` attribute, an numpy array. There's also a dictionary `SQ.paras` that stores all the characteristics as a key (string): characteristics (numpy array) pairs.
+
+
 ## Four important parameters in a single figure: 
 
 Calling the method `plotall()` will generate a plot containing the 4 most important characteristics of a solar cell in the subplots
@@ -28,6 +32,30 @@ SQ.plotall()
 * FF: Fill factor
 
 <img src="/ExampleOutputFig/ALL.png" width="800">
+
+A method `get_paras(self, Eg, toPrint=True)` can be used to look up the results. For example, the following call would print the theoretical parameters for a 1.337 eV solar cell.
+```python
+SQ.get_paras(Eg = 1.337)
+
+# would print :
+"""
+
+Bandgap: 1.337 eV ; J0 = 2.64e-17 mA/cm^2
+
+Voc = 1.079      V
+Jsc = 35.14      mA/cm^2
+FF  = 88.88      %
+PCE = 33.703     %
+"""
+```
+
+## savedata
+The data can be saved as a single .csv file
+```python
+SQ.saveall(savename = "SQ lim")
+```
+
+The data can be accessed here: [SQ limi data]("/SQ lim.csv")
 
 
 ## Plot other characteristics
