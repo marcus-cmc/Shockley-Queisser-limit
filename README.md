@@ -63,13 +63,13 @@ SQ.plot('Voc')
 
 
 
-## savedata
+##  Savedata
 The data can be saved as a single .csv file
 ```python
 SQ.saveall(savename = "SQ lim")
 ```
 
-The data can be accessed here: [SQ limit data](https://github.com/marcus-cmc/Theoretical_Solar_Cell_Efficiencies/blob/master/SQ%20limit.csv)
+##  The data can be accessed here: [SQ limit data](/SQ%20limit.csv)
 
 #
 # Visualize more interesting results
