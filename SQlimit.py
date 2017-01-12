@@ -251,7 +251,7 @@ def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
     E_pct= {'trans':np.sum(transloss)/E_tot, 'therm':np.sum(thermloss)/E_tot,
             'extract': np.sum(extractloss)/E_tot, 'avail':np.sum(Eavail)/E_tot}
 
-    legendtitle = "Banggap = {0:.3f} eV".format(Eg)
+    legendtitle = "Bandgap = {0:.3f} eV".format(Eg)
     legends = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[i], edgecolor=None)
                for i in ['trans', 'therm', 'extract', 'avail'] ]
 
