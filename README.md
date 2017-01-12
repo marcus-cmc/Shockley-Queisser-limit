@@ -69,7 +69,7 @@ The data can be saved as a single .csv file
 SQ.saveall(savename = "SQ lim")
 ```
 
-The data can be accessed here: [SQ limi data]("/SQ lim.csv")
+The data can be accessed here: [SQ limi data]("/SQ limit.csv")
 
 
 #
