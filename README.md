@@ -36,10 +36,10 @@ SQ.plotall()
 A method `get_paras(self, Eg, toPrint=True)` can be used to look up the results. For example, the following call would print the theoretical parameters for a 1.337 eV solar cell.
 ```python
 SQ.get_paras(Eg = 1.337)
-
-# would print :
+```
+would print the following lines like these in the colsole:
+```python
 """
-
 Bandgap: 1.337 eV ; J0 = 2.64e-17 mA/cm^2
 
 Voc = 1.079      V
@@ -49,13 +49,6 @@ PCE = 33.703     %
 """
 ```
 
-## savedata
-The data can be saved as a single .csv file
-```python
-SQ.saveall(savename = "SQ lim")
-```
-
-The data can be accessed here: [SQ limi data]("/SQ lim.csv")
 
 
 ## Plot other characteristics
@@ -67,6 +60,16 @@ SQ.plot('Voc')
 ```
 
 <img src="/ExampleOutputFig/J0.png" width="450"> <img src="/ExampleOutputFig/Voc.png" width="450">
+
+
+
+## savedata
+The data can be saved as a single .csv file
+```python
+SQ.saveall(savename = "SQ lim")
+```
+
+The data can be accessed here: [SQ limi data]("/SQ lim.csv")
 
 
 #
