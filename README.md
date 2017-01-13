@@ -206,7 +206,7 @@ VarySuns(Suns=[1, 10, 100, 1000])
 
 ## Different radiative efficiency
 
-###  The higher the EQE_EL (radiative efficiency), the higher the power conversion efficiency.
+####  The lower the EQE_EL (radiative efficiency), the lower the power conversion efficiency.
 ```python
 VarySuns(EQE_EL=[1, 1E-2, 1E-4, 1E-6])
 ```
