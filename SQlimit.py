@@ -48,6 +48,14 @@ class SQlim(object):
         EQE_EL: radiative efficiency (EL quantum yield)
         intensity: light concentration, 1.0 = one Sun, 100 mW/cm^2
         """
+        try:
+            T, EQE_EL, intensity = float(T), float(EQE_EL), float(intensity)
+        except:
+            raise ValueError("Invalid input for T, EQE_EL, or intensity")
+
+        if T <= 0 or EQE_EL > 1.0 or EQE_EL <= 0 :
+            raise ValueError("Both T and EQE_EL must be greater than 0 and "+
+                             "EQE_EL cannot be greater than 1.0" )
         self.T = T
         self.EQE_EL = EQE_EL
         self.intensity = intensity
@@ -488,7 +496,9 @@ def Js_tandem(Es):
 if __name__=="__main__":
     plt.close('all')
     SQ = SQlim()
-    #SQ.plotall()
+    SQ.plot()
+    SQ.plotall()
+    E_loss(1.337, SQ)
 
 
     """
