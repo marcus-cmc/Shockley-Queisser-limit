@@ -1,4 +1,6 @@
-# Theoretical Solar Cell Efficiencies Based on the Shockley Queisser limit
+# Shockley Queisser limit : 
+## Theoretical Solar Cell Efficiencies calculator and visualizer
+
 It calculates the theoretical solar cell parameters with options to change temperature, light intensity, and radiative efficiency, provides visualization tools. 
 
 The calculation is based on the radiative limit or the Shockley Queisser limit
@@ -59,18 +61,30 @@ SQ.plot('J0') # dark saturation current
 SQ.plot('Voc') 
 ```
 
-<img src="/ExampleOutputFig/J0.png" width="450"> <img src="/ExampleOutputFig/Voc.png" width="450">
+<img src="/ExampleOutputFig/J0.png" width="450"> 
+<img src="/ExampleOutputFig/Voc.png" width="450">
 
+
+# Calculate and plot the J-V curves
+
+The `Sim_JV()` method can be used to calculate the J-V curve with an option to plot it.
+
+```python
+SQ.Sim_JV(Eg = 1.337, plot=True) # calculate the J-V curve of solar cell, plot it, and return the J-V data
+```
+
+<img src="/ExampleOutputFig/JVcurve_1pt337eV.png" width="450">
 
 
 ##  Savedata
-The data can be saved as a single .csv file
+The data (Voc, Jsc, FF, PCE, J0 as a function of bandgap) can be saved as a single .csv file
 ```python
 SQ.saveall(savename = "SQ lim")
 ```
 
 ##  The data can be accessed here: [SQ limit data](/SQ%20limit.csv)
 
+#
 #
 # Visualize more interesting results
 
