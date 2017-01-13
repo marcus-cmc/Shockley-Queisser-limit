@@ -37,7 +37,7 @@ SQ.plotall()
 
 A method `get_paras(self, Eg, toPrint=True)` can be used to look up the results. For example, the following call would print the theoretical parameters for a 1.337 eV solar cell.
 ```python
-SQ.get_paras(Eg = 1.337)
+SQ.get_paras(Eg=1.337)
 ```
 would print the following lines like these in the colsole:
 ```python
@@ -70,7 +70,7 @@ SQ.plot('Voc')
 The `Sim_JV()` method can be used to calculate the J-V curve with an option to plot it.
 
 ```python
-SQ.Sim_JV(Eg = 1.337, plot=True) # calculate the J-V curve of solar cell, plot it, and return the J-V data
+SQ.Sim_JV(Eg=1.337, plot=True) # calculate the J-V curve of solar cell, plot it, and return the J-V data
 ```
 
 <img src="/ExampleOutputFig/JVcurve_1pt337eV.png" width="450">
@@ -79,7 +79,7 @@ SQ.Sim_JV(Eg = 1.337, plot=True) # calculate the J-V curve of solar cell, plot i
 ##  Savedata
 The data (Voc, Jsc, FF, PCE, J0 as a function of bandgap) can be saved as a single .csv file
 ```python
-SQ.saveall(savename = "SQ lim")
+SQ.saveall(savename="SQ lim") # save data as "SQ lim.csv"
 ```
 
 ##  The data can be accessed here: [SQ limit data](/SQ%20limit.csv)
@@ -93,7 +93,7 @@ SQ.saveall(savename = "SQ lim")
 The function provides in the script `E_loss`, which takes bandgap `Eg` as an input, and an optional input of an `SQlim` object, can be used to visualize the break down of energy loss. 
 
 ```python
-E_loss(Eg = 1.337, SQ = SQ)
+E_loss(Eg=1.337, SQ=SQ)
 ```
 
 Shown here are the break down for a 1.337 eV solar cell, which has the maximum theoretical efficiency of 33.7 %.
@@ -108,7 +108,7 @@ The function E_available can be used to calculate and plot theoretical maximum a
 ### Single-junction solar cell, 1.337 eV
 
 ```python
-available_E(Egs = 1.337, SQ = SQ)
+available_E(Egs=1.337, SQ=SQ)
 ```
 
 This is the similar to the one above but without the break down of energy loss.
@@ -126,7 +126,7 @@ The theoretical efficiencies of multijunction solar cells can be higher than sin
 
 ### Two bandgaps: 1.1 eV and 1.8 eV
 ```python
-available_E(Egs = [1.1, 1.8], SQ = SQ)
+available_E(Egs=[1.1, 1.8], SQ=SQ)
 ```
 The sum of the two sub-cells are higher than any single-junction solar cells.
 <img src="/ExampleOutputFig/E_avail_2cells.png" width="800">
@@ -134,7 +134,7 @@ The sum of the two sub-cells are higher than any single-junction solar cells.
 ### Three bandgaps: 0.95 eV, 1.37 eV, 1.90 eV
 
 ```python
-available_E(Egs = [0.95, 1.37, 1.90], SQ = SQ)
+available_E(Egs=[0.95, 1.37, 1.90], SQ=SQ)
 ```
 The sum of the efficiency are even higher.
 <img src="/ExampleOutputFig/E_avail_3cells.png" width="800">
@@ -148,12 +148,15 @@ The sum of the efficiency are even higher.
 
 ## Efficiency Limit: "Infinite" number of junctions
 
-The theoretical limit for tandem cells with a infinite number of junctions is about ~68%. (The number may be derived analytically, see [Wikipedia's page] (https://en.wikipedia.org/wiki/Multi-junction_solar_cell#Theoretical_Limiting_Efficiency)and the references therein.) But we can also use this `available_E` function to numerically approximate it. And we don't actually need an "infinite" amount of junctions. 50 junctions is close enough:
+The theoretical limit for tandem cells with a infinite number of junctions is about ~68%. (This number may be derived analytically, see [Wikipedia's page] (https://en.wikipedia.org/wiki/Multi-junction_solar_cell#Theoretical_Limiting_Efficiency) and the references therein.) But we can also use this `available_E` function to numerically approximate it. And we don't actually need an "infinite" amount of junctions. 50 junctions is close enough to get the job done:
 
 ```python
 # 50 subcells, 0.496 eV (2500nm) to 4.2 eV with equal energy spacing
 available_E(np.linspace(0.496, 4.2, 50), legend=False) 
 ```
+### A hypothetical multi-junction solar cell consisting of 50 sub-cells
+
+Its overall power conversion efficiency is 67.1% 
 
 <img src="/ExampleOutputFig/MJ496to4200meV_50J.png" width="800">
 
@@ -184,7 +187,7 @@ Because of this flexibility, we can easily get an idea of how the change of thes
 The function `VaryTemp(T)` can do this calculation and plot the results.
 
 ```python
-VaryTemp(T = [150, 200, 250, 300, 350, 400])
+VaryTemp(T=[150, 200, 250, 300, 350, 400])
 ```
 
 <img src="/ExampleOutputFig/VaryT.png" width="800">
@@ -195,7 +198,7 @@ VaryTemp(T = [150, 200, 250, 300, 350, 400])
 ####  The efficiencies are higher when the incident light intensity is higher. 
 The function `VarySuns` does that caculation. 
 ```python
-VarySuns(Suns = [1, 10, 100, 1000])
+VarySuns(Suns=[1, 10, 100, 1000])
 ```
 
 <img src="/ExampleOutputFig/VaryIntensity.png" width="800">
@@ -204,7 +207,9 @@ VarySuns(Suns = [1, 10, 100, 1000])
 ## Different radiative efficiency
 
 ###  The higher the EQE_EL (radiative efficiency), the higher the power conversion efficiency.
-
+```python
+VarySuns(EQE_EL=[1, 1E-2, 1E-4, 1E-6])
+```
 <img src="/ExampleOutputFig/VaryEQEEL.png" width="800">
 
 
