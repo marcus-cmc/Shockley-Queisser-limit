@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Feb 11 17:54:16 2016
-
-@author: marcus
+@author: C. Marcus Chuang 2016
 """
 
 import pandas as pd
@@ -10,15 +8,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from  scipy.integrate import cumtrapz
-plt.style.use('ggplot')
-#plt.style.use(['ggplot','dark_background'])
-
 try: # use seaborn to choose better colors
     import seaborn as sns
     with_sns = True
 except: # if you don't have seaborn
     with_sns = False
 
+plt.style.use('ggplot')
+#plt.style.use(['ggplot','dark_background'])
 
 
 k = 1.38064852e-23   # m^2 kg s^-2 K^-1, Boltzmi constant
@@ -135,30 +132,31 @@ class SQlim(object):
 
 
     def get_paras(self, Eg, toPrint=True):
-        ''' input Eg, return or print the corresponding parameters
+        '''
+        input Eg, return or print the corresponding parameters
+        if toPrint == True : print the result, return None
+        if toPrint == False: return the result as a dictionary
         '''
         if not self.Es[0] <= Eg <= self.Es[-1]:
             print "invalid bandgap \nvalid range: 0.32 to 4.4"
             return
-        Voc = np.interp([Eg], self.Es, self.Voc)[0]
-        Jsc = np.interp([Eg], self.Es, self.Jsc)[0]
-        FF  = np.interp([Eg], self.Es, self.FF)[0]
-        PCE = np.interp([Eg], self.Es, self.PCE)[0]
-        J0  = np.interp([Eg], self.Es, self.J0)[0]
-        if toPrint:
-            print
-            print "Bandgap: {0:.3f} eV ; J0 = {1:.3g} mA/cm^2\n".format(Eg, J0)
-            print "Voc = {0:.4g} \t V".format(Voc)
-            print "Jsc = {0:.4g} \t mA/cm^2".format(Jsc)
-            print "FF  = {0:.2f} \t %".format(FF)
-            print "PCE = {0:.3f} \t %".format(PCE)
-            return
         para = {}
-        para["Voc"] = Voc
-        para["Jsc"] = Jsc
-        para["FF"] = FF
-        para["PCE"] = PCE
-        para["J0"] = J0
+        # could change these to binary search
+        para["Voc"] = np.interp([Eg], self.Es, self.Voc)[0]
+        para["Jsc"] = np.interp([Eg], self.Es, self.Jsc)[0]
+        para["FF"]  = np.interp([Eg], self.Es, self.FF)[0]
+        para["PCE"] = np.interp([Eg], self.Es, self.PCE)[0]
+        para["J0"]  = np.interp([Eg], self.Es, self.J0)[0]
+
+        if toPrint: # won't return anything; print in console instead
+            print
+            print "Bandgap: {0:.3f} eV ; J0 = {1:.3g} mA/cm^2\n".format(Eg, para["J0"])
+            print "Voc = {0:.4g} \t V".format(para["Voc"])
+            print "Jsc = {0:.4g} \t mA/cm^2".format(para["Jsc"])
+            print "FF  = {0:.2f} \t %".format(para["FF"])
+            print "PCE = {0:.3f} \t %".format(para["PCE"])
+            return
+
         return para
 
     def saveall(self, savename="SQ limit"):
@@ -287,8 +285,8 @@ def E_loss(Eg, SQ=SQlim(), xmin=300, xmax=2500, savefig=False):
 
 
 
-def available_E(Egs, SQ=SQlim(),
-                E_MPP=True, xmin=300, xmax=2500, savefig=False):
+def available_E(Egs, SQ=SQlim(),E_MPP=True, xmin=300, xmax=2500, savefig=False,
+                legend = True, legend_totE = True):
     """
     plot the theoretical maximum available energies from a series of
     solar cells with different Egs.
@@ -310,7 +308,7 @@ def available_E(Egs, SQ=SQlim(),
     except:
         l, Egs = 1, [Egs]
     EgMax, Egmin = max(Egs), min(Egs)
-    if EgMax > 4.2 or Egmin<0.32:
+    if EgMax > 4.2 or Egmin < 0.32:
         print "invalid bandgap \nvalid range: 0.32 to 4.2 eV"
         return None
     xmax = max(xmax, 1240.0/Egmin)
@@ -318,8 +316,8 @@ def available_E(Egs, SQ=SQlim(),
     Egs  = sorted(list(Egs) + [4.5]) # add a dummy 4.5 eV, a dummy Jsc 0.0
 
 
-    WLs=np.arange(280,4001,1.0)
-    AM15nm=np.interp(WLs, WL, solar_per_nm)
+    WLs = np.arange(280, 4001,1.0)
+    AM15nm = np.interp(WLs, WL, solar_per_nm)
     plt.figure(figsize=(8,4.5))
     ax = plt.gca()
     # color options: darkgoldenrod, darkorange, yellow, black
@@ -345,7 +343,7 @@ def available_E(Egs, SQ=SQlim(),
     for n, Eg in enumerate(Egs[:-1]):
         color = colors[n]
         if E_MPP:
-            SQ_E = SQlim(intensity=(Jscs[n]-Jscs[n+1])/Jscs[n])
+            SQ_E = SQlim(intensity = (Jscs[n]-Jscs[n+1]) / Jscs[n])
             para = SQ_E.get_paras(Eg, toPrint=False)
             factor = para["Voc"]*para["FF"]/100.0/Eg
         mask = ((1240.0/WLs)>=Eg) * (Egs[n+1]>=(1240.0/WLs))
@@ -360,15 +358,28 @@ def available_E(Egs, SQ=SQlim(),
     ax.set_xlabel("Wavelength (nm)",size=18)
     ax.tick_params(labelsize=16)
 
-    legends = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[i],
-                             edgecolor=None) for i in range(l)[::-1] ]
-    if l==1:
-        labels = ["Eg={0} eV, PCE={1:.1f}%".format(Egs[0], PCEsubcell[0])]
-    else:
-        labels = ["Cell {0}, Eg={1:.2f} eV, PCE={2:.1f}%".format(l-i, Egs[i],
-                   PCEsubcell[i])  for i in range(l)[::-1]]
-    ax.legend(legends, labels, frameon=False, loc="upper right",
-              fontsize=14).draggable()
+    if legend:
+        legends = [plt.Rectangle((0, 0), 1, 1, facecolor=colors[i],
+                                  edgecolor=None) for i in range(l)[::-1] ]
+
+        if l==1:
+            labels = ["Eg={0} eV, PCE={1:.1f}%".format(Egs[0], PCEsubcell[0])]
+
+        else:
+            labels = ["Cell {0}, Eg={1:.2f} eV, PCE={2:.1f}%".format(
+                       l-i, Egs[i], PCEsubcell[i])  for i in range(l)[::-1]]
+
+        ax.legend(legends, labels, frameon=False, loc="upper right",
+                      fontsize=14).draggable()
+    if l!=1 and legend_totE==True:
+        totE = np.nansum(PCEsubcell) # small slice would have nan PCE
+        legend_title = "Total = {0:.1f} %".format(totE)
+        if not ax.get_legend():
+            ax.legend("", "", frameon=False, loc="upper right",
+                      title=legend_title, fontsize=14).draggable()
+        else:
+            ax.get_legend().set_title(legend_title)
+        ax.get_legend().get_title().set_fontsize(14)
 
     plt.tight_layout()
     if savefig:
@@ -433,29 +444,27 @@ if __name__=="__main__":
     plt.close('all')
     SQ = SQlim()
     #SQ.plotall()
-    #for p in SQ.paras:
-    #    SQ.plot(p)
 
 
-### Examples  ####
+    """
+    # plot Voc, Jsc, FF, PCE
+    SQ.plotall() # plot Voc, Jsc, FF, PCE in one figure with 4 subplots
+    SQ.plot("Voc") # plot Voc only.
+    SQ.plot("PCE") # plot Jsc...other valid inputs: "Jsc", "FF", "J0"
 
-# plot Voc, Jsc, FF, PCE
-#SQ.plotall() # plot Voc, Jsc, FF, PCE
+    # get Voc, Jsc, FF, PCE for a specific bandgap
+    SQ.get_paras(1.337)  # print out the values
+    SQ.get_paras(1.337, toPrint=False) # get a dictionary of parameters
 
-# get Voc, Jsc, FF, PCE for a specific bandgap
-#SQ.get_paras(1.337)  # print out the values
-#SQ.get_paras(1.337, toPrint=False) # get a dictionary of parameters
+    # plot available energy and loss for a specific bandgap
+    E_loss(1.3)
 
+    # plot available energy for cells with many different bandgap materials
+    #available_E([0.9, .6,1.5,1.2])
 
-# plot available energy and loss for a specific bandgap
-#E_loss(1.3)
-
-# plot available energy for cells with many different bandgap materials
-#available_E([0.9, .6,1.5,1.2])
-
-### calculate and plot JV curve
-#SQ.Sim_JV(1.3, plot=True)
-
+    ### calculate and plot JV curve
+    SQ.Sim_JV(1.3, plot=True)
+    """
 
 
 
