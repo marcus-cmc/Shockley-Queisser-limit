@@ -122,6 +122,8 @@ This is the similar to the one above but without the break down of energy loss.
 
 The theoretical efficiencies of multijunction solar cells can be higher than single junction solar cells. The function `availableE` can actually take a list of different bandgaps and calculate the maximum possible efficiencies by using materials with these bandgaps. 
 
+**Note** : In this calculation, we ignore the fact that the bottom cells (lower bandgaps) could absorb the 'excess' emission from the top cells (higher bandgaps)--when the top cells are operated at their maximum power point with finite voltage, there would be some excess emission. This phenomenon has a very minor effect on the calculated efficiencies for multi-junction cells.
+
 ### Two bandgaps: 1.1 eV and 1.8 eV
 ```python
 available_E(Egs = [1.1, 1.8], SQ = SQ)
@@ -140,9 +142,20 @@ The sum of the efficiency are even higher.
 
 ### Three bandgaps: Ge(0.65 eV), InGaAs (1.40 eV), InGaP (1.90 eV)
 
-####  This bandgap-material combination is the example you can find on [Wikipedia's Multi-junction_solar_cell] (https://en.wikipedia.org/wiki/Multi-junction_solar_cell) page
+####  This bandgap-material combination is the example you can find on [Wikipedia's Multi-Junction Solar Cell] (https://en.wikipedia.org/wiki/Multi-junction_solar_cell) page
 
 <img src="/ExampleOutputFig/E_avail_3cells_InGaP_InGaAs_Ge.png" width="800">
+
+## Efficiency Limit: "Infinite" number of junctions
+
+The theoretical limit for tandem cells with a infinite number of junctions is about ~68%. (The number may be derived analytically, see [Wikipedia's page] (https://en.wikipedia.org/wiki/Multi-junction_solar_cell#Theoretical_Limiting_Efficiency)and the references therein.) But we can also use this `available_E` function to numerically approximate it. And we don't actually need an "infinite" amount of junctions. 50 junctions is close enough:
+
+```python
+# 50 subcells, 0.496 eV (2500nm) to 4.2 eV with equal energy spacing
+available_E(np.linspace(0.496, 4.2, 50), legend=False) 
+```
+
+<img src="/ExampleOutputFig/MJ496to4200meV_50J.png" width="800">
 
 
 #
