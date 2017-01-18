@@ -148,7 +148,7 @@ The sum of the efficiency are even higher.
 
 ## Efficiency Limit: "Infinite" number of junctions
 
-The theoretical limit for tandem cells with a infinite number of junctions is about ~68%. (This number may be derived analytically, see [Wikipedia's page] (https://en.wikipedia.org/wiki/Multi-junction_solar_cell#Theoretical_Limiting_Efficiency) and the references therein.) But we can also use this `available_E` function to numerically approximate it. And we don't actually need an "infinite" amount of junctions. 50 junctions is close enough to get the job done:
+The theoretical limit for tandem cells with a infinite number of junctions is about ~68%. (This number may be derived analytically, see [Wikipedia's page] (https://en.wikipedia.org/wiki/Multi-junction_solar_cell#Theoretical_Limiting_Efficiency) and the references therein.) But we can also use this `SQ.available_E()`method to numerically approximate it. And we don't actually need an "infinite" amount of junctions. 50 junctions is close enough to get the job done:
 
 ```python
 # 50 subcells, 0.496 eV (2500nm) to 4.2 eV with equal energy spacing
