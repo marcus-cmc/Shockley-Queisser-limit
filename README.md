@@ -90,10 +90,10 @@ SQ.saveall(savename="SQ lim") # save data as "SQ lim.csv"
 
 ## Break down of the theoretical efficiency and the energy loss
 
-The function provides in the script `E_loss`, which takes bandgap `Eg` as an input, and an optional input of an `SQlim` object, can be used to visualize the break down of energy loss. 
+The method `SQ.E_loss(Eg)`, which takes bandgap `Eg` as an input, can be used to visualize the break down of energy loss. 
 
 ```python
-E_loss(Eg=1.337, SQ=SQ)
+SQ.E_loss(Eg=1.337)
 ```
 
 Shown here are the break down for a 1.337 eV solar cell, which has the maximum theoretical efficiency of 33.7 %.
@@ -103,12 +103,12 @@ Shown here are the break down for a 1.337 eV solar cell, which has the maximum t
 
 ##  Available Energies
 
-The function E_available can be used to calculate and plot theoretical maximum available energies from a series of (mechanically stacked) solar cells with different Egs.
+The mathod SQ.available_E(Egs) can be used to calculate and plot theoretical maximum available energies from a series of (mechanically stacked) solar cells with different Egs.
 
 ### Single-junction solar cell, 1.337 eV
 
 ```python
-available_E(Egs=1.337, SQ=SQ)
+SQ.available_E(Egs=1.337)
 ```
 
 This is the similar to the one above but without the break down of energy loss.
@@ -120,13 +120,13 @@ This is the similar to the one above but without the break down of energy loss.
       
 ## Multi-junction solar cells
 
-The theoretical efficiencies of multijunction solar cells can be higher than single junction solar cells. The function `availableE` can actually take a list of different bandgaps and calculate the maximum possible efficiencies by using materials with these bandgaps. 
+The theoretical efficiencies of multijunction solar cells can be higher than single junction solar cells. The method `SQ.available_E` can actually take a list of different bandgaps and calculate the maximum possible efficiencies by using materials with these bandgaps. 
 
 **Note** : In this calculation, we ignore the fact that the bottom cells (lower bandgaps) could absorb the 'excess' emission from the top cells (higher bandgaps)--when the top cells are operated at their maximum power point with finite voltage, there would be some excess emission. This phenomenon has a very minor effect on the calculated efficiencies for multi-junction cells.
 
 ### Two bandgaps: 1.1 eV and 1.8 eV
 ```python
-available_E(Egs=[1.1, 1.8], SQ=SQ)
+SQ.available_E(Egs=[1.1, 1.8])
 ```
 The sum of the two sub-cells are higher than any single-junction solar cells.
 <img src="/ExampleOutputFig/E_avail_2cells.png" width="800">
@@ -134,7 +134,7 @@ The sum of the two sub-cells are higher than any single-junction solar cells.
 ### Three bandgaps: 0.95 eV, 1.37 eV, 1.90 eV
 
 ```python
-available_E(Egs=[0.95, 1.37, 1.90], SQ=SQ)
+SQ.available_E(Egs=[0.95, 1.37, 1.90])
 ```
 The sum of the efficiency are even higher.
 <img src="/ExampleOutputFig/E_avail_3cells.png" width="800">
