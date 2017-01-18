@@ -1097,5 +1097,3 @@ if __name__ == "__main__":
     SQ.Sim_JV(1.3, plot=True)
     """
 
-
->>>>>>> Stashed changes
