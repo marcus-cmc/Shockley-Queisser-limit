@@ -171,7 +171,7 @@ class SQlim(object):
         if toPrint:  # won't return anything; print in console instead
             print
             print "Bandgap: {0:.3f} eV \n".format(Eg)
-            print "J0 = {1:.3g} mA/cm^2".format(para["J0"])
+            print "J0 = {0:.3g} mA/cm^2".format(para["J0"])
             print "Voc = {0:.4g} \t V".format(para["Voc"])
             print "Jsc = {0:.4g} \t mA/cm^2".format(para["Jsc"])
             print "FF  = {0:.2f} \t %".format(para["FF"])
