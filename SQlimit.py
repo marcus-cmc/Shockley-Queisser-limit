@@ -37,7 +37,7 @@ Es = np.arange(0.32, 4.401, 0.002)
 
 # linear interpolation to get an equally spaced spectrum
 AM15 = np.interp(Es, E[::-1], solar_per_E[::-1])  # W m^-2 eV^-1
-AM15flux = AM15 / (Es*eV)  # number of photon m^-2 eV^-1
+AM15flux = AM15 / (Es*eV)  # number of photon m^-2 eV^-1 s^-1
 
 
 class SQlim(object):
