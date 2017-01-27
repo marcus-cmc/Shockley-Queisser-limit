@@ -344,7 +344,7 @@ class SQlim(object):
                      not cover the range of the bandgaps in Egs
         legend : whether to show legends for the plots
         legend_totE : whether to show the total available energy in a
-                       multi-junction solar cell. 
+                       multi-junction solar cell.
                       (does nothing when there is only one value for Egs)
         """
         # 1-J : 1.337
@@ -457,14 +457,60 @@ class SQlim(object):
     # whether to plot Eg (eV) vs Feature or Wavelength (nm) vs Features
 
 
-# ###########################################################################
+# =========================================================================
 # ##################### Useful functions for plotting results #######
 
+def VaryTemp(T=[150, 200, 250, 300, 350], xlim=[0.3, 4.0], attr="PCE"):
+    plt.figure()
+    parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
+    if attr not in parameters:
+        print "Invalid attribute"
+        return
+    SQs = [SQlim(T=temp) for temp in sorted(T)]
+    for SQ in SQs:
+        plt.plot(Es, getattr(SQ, attr), label="T = {} K".format(SQ.T))
+        __helper_plt(xlim, attr)
+
+    return SQs
 
 
-def __helper_plt(xlim):
+def VaryEQE_EL(EQE_EL=[1E-6, 1E-4, 1E-2, 1], xlim=[0.3, 4.0], attr="PCE"):
+    plt.figure()
+    parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
+    if attr not in parameters:
+        print "Invalid attribute"
+        return
+    SQs = [SQlim(EQE_EL=EQE) for EQE in sorted(EQE_EL, reverse=True)]
+    for SQ in SQs:
+        strEQE = "{:0.2E}".format(SQ.EQE_EL)
+        num, expo = strEQE[:4], str(int(strEQE[5:]))
+        plt.plot(Es, getattr(SQ, attr),
+                 label=r"$EQE_{EL} = %s \times 10^{%s}$" % (num, expo))
+        __helper_plt(xlim, attr)
+
+    return SQs
+
+
+def VarySuns(Suns=[1, 10, 100, 1000], xlim=[0.3, 4.0], attr="PCE"):
+    plt.figure()
+    parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
+    if attr not in parameters:
+        print "Invalid attribute"
+        return
+    SQs = [SQlim(intensity=sun) for sun in sorted(Suns, reverse=True)]
+    for SQ in SQs:
+        plt.plot(Es, getattr(SQ, attr), label="{:4G} sun".format(SQ.intensity))
+        __helper_plt(xlim, attr)
+
+    return SQs
+
+
+def __helper_plt(xlim, attr="PCE"):
+    ylabel = {"PCE": "Efficiency (%)", "Voc": "Voc (V)", "FF": "FF (%)",
+              "Jsc": "Jsc (mA/$\mathregular{cm^2}$)",
+              "J0": "J0 (mA/$\mathregular{cm^2}$)"}
     plt.xlabel("Bandgap (eV)", size=20)
-    plt.ylabel("Efficiency (%)", size=20)
+    plt.ylabel(ylabel[attr], size=20)
     plt.xlim(xlim)
     plt.tick_params(labelsize=18)
     ax = plt.gca()
@@ -474,45 +520,22 @@ def __helper_plt(xlim):
     return
 
 
-def VaryTemp(T=[150, 200, 250, 300, 350], xlim=[0.3, 4.0]):
-    plt.figure()
-    SQs = [SQlim(T=temp) for temp in sorted(T)]
-    for SQ in SQs:
-        plt.plot(Es, SQ.PCE, label="T = {} K".format(SQ.T))
-        __helper_plt(xlim)
-
-    return SQs
-
-
-def VaryEQE_EL(EQE_EL=[1E-6, 1E-4, 1E-2, 1], xlim=[0.3, 4.0]):
-    plt.figure()
-    SQs = [SQlim(EQE_EL=EQE) for EQE in sorted(EQE_EL, reverse=True)]
-    for SQ in SQs:
-        strEQE = "{:0.2E}".format(SQ.EQE_EL)
-        num, expo = strEQE[:4], str(int(strEQE[5:]))
-        plt.plot(Es, SQ.PCE,
-                 label=r"$EQE_{EL} = %s \times 10^{%s}$" % (num, expo))
-        __helper_plt(xlim)
-
-    return SQs
-
-
-def VarySuns(Suns=[1, 10, 100, 1000], xlim=[0.3, 4.0]):
-    plt.figure()
-    SQs = [SQlim(intensity=sun) for sun in sorted(Suns, reverse=True)]
-    for SQ in SQs:
-        plt.plot(Es, SQ.PCE, label="{:4G} sun".format(SQ.intensity))
-        __helper_plt(xlim)
-
-    return SQs
-
-
 def Js_tandem(Es):
-    P = [0] + [SQ.get_paras(E, toPrint=False)["Jsc"]
-               for E in sorted(Es, reverse=True)]
-    J = [p - P[n] for n, p in enumerate(P[1:])][::-1]
+    """
+    Given several bandgap values, return the Jsc's of each subcell,
+    assuming that they are mechanically stacked (No current matching)
 
-    return np.round(np.array(J), 2)
+    input: Es: array-like, bandgaps
+    return : a pandas dataframe
+             where the first column is the bandgap and the second column Jsc
+    """
+    Es = sorted(set(Es), reverse=True)
+    P = [0] + [SQ.get_paras(E, toPrint=False)["Jsc"] for E in Es]
+    df = pd.DataFrame()
+    df["Bandgap (eV)"] = Es
+    df["Jsc (mA/cm2)"] = [P[i] - P[i-1] for i in xrange(1, len(P))]
+
+    return df
 
 
 ###################################################################
