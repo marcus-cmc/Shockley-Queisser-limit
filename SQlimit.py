@@ -63,6 +63,20 @@ class SQlim(object):
         self.WLs = np.arange(280, 4001, 1.0)
         self.AM15nm = np.interp(self.WLs, WL, solar_per_nm)
 
+    def __repr__(self):
+        s = "<SQlim:"
+        conditions = []
+        if self.T != 300.0:
+            conditions.append("T={:.0f}K".format(self.T))
+        if self.intensity != 1.0:
+            conditions.append("{:.4g}-Sun".format(self.intensity))
+        if self.EQE_EL != 1.0:
+            conditions.append("EQE_EL={:.2E}".format(self.EQE_EL))
+
+        if conditions:
+            return s + " [" + ", ".join(conditions) + "]" + ">"
+        return s + " [standard]>"
+
     def Calculate(self):
         self.J0 = self.cal_E_J0()  # dark saturation current density
         self.Jsc = self.cal_E_Jsc()  # shor-circuit current density
@@ -471,6 +485,8 @@ def VaryTemp(T=[150, 200, 250, 300, 350], xlim=[0.3, 4.0], attr="PCE"):
         plt.plot(Es, getattr(SQ, attr), label="T = {} K".format(SQ.T))
         __helper_plt(xlim, attr)
 
+    plt.show()
+
     return SQs
 
 
@@ -488,6 +504,8 @@ def VaryEQE_EL(EQE_EL=[1E-6, 1E-4, 1E-2, 1], xlim=[0.3, 4.0], attr="PCE"):
                  label=r"$EQE_{EL} = %s \times 10^{%s}$" % (num, expo))
         __helper_plt(xlim, attr)
 
+    plt.show()
+
     return SQs
 
 
@@ -501,6 +519,8 @@ def VarySuns(Suns=[1, 10, 100, 1000], xlim=[0.3, 4.0], attr="PCE"):
     for SQ in SQs:
         plt.plot(Es, getattr(SQ, attr), label="{:4G} sun".format(SQ.intensity))
         __helper_plt(xlim, attr)
+
+    plt.show()
 
     return SQs
 
