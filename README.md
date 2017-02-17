@@ -140,7 +140,7 @@ The sum of the efficiency are even higher.
 <img src="/ExampleOutputFig/E_avail_3cells.png" width="800">
 
 
-### Three bandgaps: Ge(0.65 eV), InGaAs (1.40 eV), InGaP (1.90 eV)
+### Three bandgaps: Ge(0.65 eV), InGaAs (1.40 eV), InGaP (1.86 eV)
 
 ####  This bandgap-material combination is the example you can find on [Wikipedia's Multi-Junction Solar Cell] (https://en.wikipedia.org/wiki/Multi-junction_solar_cell) page
 
@@ -152,7 +152,7 @@ The theoretical limit for tandem cells with a infinite number of junctions is ab
 
 ```python
 # 50 subcells, 0.496 eV (2500nm) to 4.2 eV with equal energy spacing
-available_E(np.linspace(0.496, 4.2, 50), legend=False) 
+SQ.available_E(np.linspace(0.496, 4.2, 50), legend=False) 
 ```
 ### A hypothetical multi-junction solar cell consisting of 50 sub-cells
 
