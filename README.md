@@ -67,10 +67,10 @@ SQ.plot('Voc')
 
 # Calculate and plot the J-V curves
 
-The `Sim_JV()` method can be used to calculate the J-V curve with an option to plot it.
+The `simulate_JV()` method can be used to calculate the J-V curve with an option to plot it.
 
 ```python
-SQ.Sim_JV(Eg=1.337, plot=True) # calculate the J-V curve of solar cell, plot it, and return the J-V data
+SQ.simulate_JV(Eg=1.337, plot=True) # calculate the J-V curve of solar cell, plot it, and return the J-V data
 ```
 
 <img src="/ExampleOutputFig/JVcurve_1pt337eV.png" width="450">
@@ -184,10 +184,10 @@ Because of this flexibility, we can easily get an idea of how the change of thes
 ## Different Temperature
 
 #### The *theoretical* maximum possible efficiencies of solar cells could be higher at lower temperature.
-The function `VaryTemp(T)` can do this calculation and plot the results.
+The classmethod `vary_temp()` can do this calculation and plot the results.
 
 ```python
-VaryTemp(T=[150, 200, 250, 300, 350, 400])
+SQlim.vary_temp(T=[150, 200, 250, 300, 350, 400])
 ```
 
 <img src="/ExampleOutputFig/VaryT.png" width="800">
@@ -196,9 +196,9 @@ VaryTemp(T=[150, 200, 250, 300, 350, 400])
 ## Different Light intensity (Solar concentrator)
 
 ####  The efficiencies are higher when the incident light intensity is higher. 
-The function `VarySuns` does that caculation. 
+The classmethod `vary_suns` does that caculation. 
 ```python
-VarySuns(Suns=[1, 10, 100, 1000])
+SQlim.vary_suns(Suns=[1, 10, 100, 1000])
 ```
 
 <img src="/ExampleOutputFig/VaryIntensity.png" width="800">
@@ -208,7 +208,7 @@ VarySuns(Suns=[1, 10, 100, 1000])
 
 ####  The lower the EQE_EL (radiative efficiency), the lower the power conversion efficiency.
 ```python
-VarySuns(EQE_EL=[1, 1E-2, 1E-4, 1E-6])
+SQlim.vary_EQE_EL(EQE_EL=[1, 1E-2, 1E-4, 1E-6])
 ```
 <img src="/ExampleOutputFig/VaryEQEEL.png" width="800">
 
