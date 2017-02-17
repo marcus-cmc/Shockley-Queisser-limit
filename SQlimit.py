@@ -79,23 +79,23 @@ class SQlim(object):
         return s + " [standard]>"
 
     def calculate(self):
-        self.J0 = self.cal_E_J0()  # dark saturation current density
-        self.Jsc = self.cal_E_Jsc()  # shor-circuit current density
-        self.Voc = self.cal_E_Voc()  # open circuit voltage
-        self.PCE = self.cal_E_PCE()  # power conversion efficiency
+        self.J0 = self.__cal_E_J0()  # dark saturation current density
+        self.Jsc = self.__cal_E_Jsc()  # shor-circuit current density
+        self.Voc = self.__cal_E_Voc()  # open circuit voltage
+        self.PCE = self.__cal_E_PCE()  # power conversion efficiency
         # flll factor (%)
         self.FF = self.PCE / (self.Voc*self.Jsc) * 100.0 * self.intensity
         self.paras = {"Voc": self.Voc, "Jsc": self.Jsc, "J0": self.J0,
                       "FF": self.FF, "PCE": self.PCE}
         return None
 
-    def cal_E_Jsc(self):
+    def __cal_E_Jsc(self):
         fluxcumm = cumtrapz(AM15flux[::-1], self.Es[::-1], initial=0)
         fluxaboveE = fluxcumm[::-1] * -1 * self.intensity
         Jsc = fluxaboveE * q * 0.1  # mA/cm^2  (0.1: from A/m2 to mA/cm2)
         return Jsc
 
-    def cal_E_J0(self):
+    def __cal_E_J0(self):
         '''
         Calculate and return E vs J0, the dark saturation current
         J0 = q * (integrate(phi dE) from E to infinity)  / EQE_EL
@@ -112,14 +112,14 @@ class SQlim(object):
         J0[-1] = np.nan  # avoid divide by zero when calculating Voc
         return J0
 
-    def cal_E_Voc(self):
+    def __cal_E_Voc(self):
         '''
         Calculate and return E vs Voc
         Voc = (kT/q)*[ ln(Jsc/J0 + 1 )]
         '''
         return (k*self.T/q) * np.log((self.Jsc/self.J0) + 1)
 
-    def cal_E_PCE(self):
+    def __cal_E_PCE(self):
         PCE = []
         for i, E in enumerate(self.Es):
             V = np.arange(0, E, 0.001)  # can change upperbound to Voc
@@ -128,7 +128,8 @@ class SQlim(object):
             PCE.append(-1 * np.min(J*V) / self.intensity)
         return PCE
 
-    def Sim_JV(self, Eg, plot_dark=False, Vstep=0.001, plot=True, Vmin=-0.5):
+    def simulate_JV(self, Eg, plot_dark=False, Vstep=0.001,
+                    plot=True, Vmin=-0.5):
         """
         Simulate J-V curves for a solar cell at given Eg
         """
@@ -211,7 +212,7 @@ class SQlim(object):
 
         return result
 
-    def plot(self, para="PCE", xlims=[0.32, 4.5]):
+    def plot(self, para="PCE", xlims=(0.32, 4.5)):
         """
         plot one parameters in a plot
         paras: "Voc", "Jsc", "FF", "PCE", or "J0"
@@ -237,7 +238,7 @@ class SQlim(object):
         ax.tick_params(labelsize=18)
         plt.tight_layout()
         plt.show()
-        
+
         return
 
     def plotall(self, xlims=(0.32, 3.0)):
@@ -286,15 +287,17 @@ class SQlim(object):
         colors = {'therm': 'lightcoral', 'extract': 'gold',
                   'avail': 'LightSkyBlue', 'trans': 'grey'}
 
+        mask = (1240.0/WLs) >= Eg
+
         para = SQ.get_paras(Eg, toPrint=False)
         factor = para["Voc"] * para["FF"] / 100.0 / Eg
-        extract = AM15nm / (1240.0/WLs) * Eg * ((1240.0/WLs) >= Eg)
+        extract = AM15nm / (1240.0/WLs) * Eg * mask
         Eavail = extract * factor
-        therm = AM15nm * ((1240.0/WLs) >= Eg)
+        therm = AM15nm * mask
 
         extractloss = extract - Eavail
         thermloss = therm - extract
-        transloss = AM15nm * ((1240.0/WLs) < Eg)
+        transloss = AM15nm * (1 - mask)
 
         ax.fill_between(WLs, 0, transloss,
                         linewidth=0, facecolor=colors['trans'])
@@ -463,6 +466,94 @@ class SQlim(object):
 
         return E_subcell, PCEsubcell
 
+    # some classmethods for calculating and ploting various conditions
+    @classmethod
+    def vary_temp(cls, T=(150, 200, 250, 300, 350),
+                  xlim=(0.3, 4.0), attr="PCE"):
+        plt.figure()
+        parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
+        if attr not in parameters:
+            print "Invalid attribute"
+            return
+        SQs = [SQlim(T=temp) for temp in sorted(T)]
+        for SQ in SQs:
+            plt.plot(Es, getattr(SQ, attr), label="T = {} K".format(SQ.T))
+            cls.__helper_plt(xlim, attr)
+
+        plt.show()
+
+        return SQs
+
+    @classmethod
+    def vary_EQE_EL(cls, EQE_EL=(1E-6, 1E-4, 1E-2, 1),
+                    xlim=[0.3, 4.0], attr="PCE"):
+        plt.figure()
+        parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
+        if attr not in parameters:
+            print "Invalid attribute"
+            return
+        SQs = [SQlim(EQE_EL=EQE) for EQE in sorted(EQE_EL, reverse=True)]
+        for SQ in SQs:
+            strEQE = "{:0.2E}".format(SQ.EQE_EL)
+            num, expo = strEQE[:4], str(int(strEQE[5:]))
+            plt.plot(Es, getattr(SQ, attr),
+                     label=r"$EQE_{EL} = %s \times 10^{%s}$" % (num, expo))
+            cls.__helper_plt(xlim, attr)
+
+        plt.show()
+
+        return SQs
+
+    @classmethod
+    def vary_suns(cls, Suns=(1, 10, 100, 1000), xlim=[0.3, 4.0], attr="PCE"):
+        plt.figure()
+        parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
+        if attr not in parameters:
+            print "Invalid attribute"
+            return
+        SQs = [SQlim(intensity=sun) for sun in sorted(Suns, reverse=True)]
+        for SQ in SQs:
+            plt.plot(Es, getattr(SQ, attr),
+                     label="{:4G} sun".format(SQ.intensity))
+            cls.__helper_plt(xlim, attr)
+
+        plt.show()
+
+        return SQs
+
+    @classmethod
+    def __helper_plt(cls, xlim, attr="PCE"):
+        ylabel = {"PCE": "Efficiency (%)", "Voc": "Voc (V)", "FF": "FF (%)",
+                  "Jsc": "Jsc (mA/$\mathregular{cm^2}$)",
+                  "J0": "J0 (mA/$\mathregular{cm^2}$)"}
+        plt.xlabel("Bandgap (eV)", size=20)
+        plt.ylabel(ylabel[attr], size=20)
+        plt.xlim(xlim)
+        plt.tick_params(labelsize=18)
+        ax = plt.gca()
+        ax.legend(loc='upper right', fontsize=16).draggable()
+        plt.tight_layout()
+
+        return
+
+    @classmethod
+    def Js_tandem(cls, Es):
+        """
+        Given several bandgap values, return the Jsc's of each subcell,
+        assuming that they are mechanically stacked (No current matching)
+
+        input: Es: array-like, bandgaps
+        return : a pandas dataframe
+                 where the first column is the bandgap and the second col Jsc
+        """
+        Es = sorted(set(Es), reverse=True)
+        P = [0] + [SQ.get_paras(E, toPrint=False)["Jsc"] for E in Es]
+        df = pd.DataFrame()
+        df["Bandgap (eV)"] = Es
+        df["Jsc (mA/cm2)"] = [P[i] - P[i-1] for i in xrange(1, len(P))]
+
+        return df
+
     # Todo:
     # def PlotElossAll(self, xlims=(0.32, 3.0)):
     #    """
@@ -475,93 +566,6 @@ class SQlim(object):
     # Todo:
     # add an option to all the "plot" methods so that one can choose
     # whether to plot Eg (eV) vs Feature or Wavelength (nm) vs Features
-
-
-# =========================================================================
-# ##################### Useful functions for plotting results #######
-
-def VaryTemp(T=[150, 200, 250, 300, 350], xlim=[0.3, 4.0], attr="PCE"):
-    plt.figure()
-    parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
-    if attr not in parameters:
-        print "Invalid attribute"
-        return
-    SQs = [SQlim(T=temp) for temp in sorted(T)]
-    for SQ in SQs:
-        plt.plot(Es, getattr(SQ, attr), label="T = {} K".format(SQ.T))
-        __helper_plt(xlim, attr)
-
-    plt.show()
-
-    return SQs
-
-
-def VaryEQE_EL(EQE_EL=[1E-6, 1E-4, 1E-2, 1], xlim=[0.3, 4.0], attr="PCE"):
-    plt.figure()
-    parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
-    if attr not in parameters:
-        print "Invalid attribute"
-        return
-    SQs = [SQlim(EQE_EL=EQE) for EQE in sorted(EQE_EL, reverse=True)]
-    for SQ in SQs:
-        strEQE = "{:0.2E}".format(SQ.EQE_EL)
-        num, expo = strEQE[:4], str(int(strEQE[5:]))
-        plt.plot(Es, getattr(SQ, attr),
-                 label=r"$EQE_{EL} = %s \times 10^{%s}$" % (num, expo))
-        __helper_plt(xlim, attr)
-
-    plt.show()
-
-    return SQs
-
-
-def VarySuns(Suns=[1, 10, 100, 1000], xlim=[0.3, 4.0], attr="PCE"):
-    plt.figure()
-    parameters = {"PCE", "Jsc", "FF", "Voc", "J0"}
-    if attr not in parameters:
-        print "Invalid attribute"
-        return
-    SQs = [SQlim(intensity=sun) for sun in sorted(Suns, reverse=True)]
-    for SQ in SQs:
-        plt.plot(Es, getattr(SQ, attr), label="{:4G} sun".format(SQ.intensity))
-        __helper_plt(xlim, attr)
-
-    plt.show()
-
-    return SQs
-
-
-def __helper_plt(xlim, attr="PCE"):
-    ylabel = {"PCE": "Efficiency (%)", "Voc": "Voc (V)", "FF": "FF (%)",
-              "Jsc": "Jsc (mA/$\mathregular{cm^2}$)",
-              "J0": "J0 (mA/$\mathregular{cm^2}$)"}
-    plt.xlabel("Bandgap (eV)", size=20)
-    plt.ylabel(ylabel[attr], size=20)
-    plt.xlim(xlim)
-    plt.tick_params(labelsize=18)
-    ax = plt.gca()
-    ax.legend(loc='upper right', fontsize=16).draggable()
-    plt.tight_layout()
-
-    return
-
-
-def Js_tandem(Es):
-    """
-    Given several bandgap values, return the Jsc's of each subcell,
-    assuming that they are mechanically stacked (No current matching)
-
-    input: Es: array-like, bandgaps
-    return : a pandas dataframe
-             where the first column is the bandgap and the second column Jsc
-    """
-    Es = sorted(set(Es), reverse=True)
-    P = [0] + [SQ.get_paras(E, toPrint=False)["Jsc"] for E in Es]
-    df = pd.DataFrame()
-    df["Bandgap (eV)"] = Es
-    df["Jsc (mA/cm2)"] = [P[i] - P[i-1] for i in xrange(1, len(P))]
-
-    return df
 
 
 ###################################################################
@@ -592,7 +596,7 @@ if __name__ == "__main__":
     #SQ.available_E([0.9, .6,1.5,1.2])
 
     ### calculate and plot JV curve
-    SQ.Sim_JV(1.3, plot=True)
+    SQ.simulate_JV(1.3, plot=True)
     """
 
 
