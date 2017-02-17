@@ -108,6 +108,7 @@ class SQlim(object):
         fluxcumm = cumtrapz(phi[::-1], self.Es[::-1], initial=0)
         fluxaboveE = fluxcumm[::-1] * -1
         J0 = fluxaboveE * q * 0.1 / self.EQE_EL  # (0.1: from A/m2 to mA/cm2)
+        J0[-1] = np.nan  # avoid divide by zero when calculating Voc
         return J0
 
     def cal_E_Voc(self):
@@ -234,6 +235,8 @@ class SQlim(object):
         ax.set_xlabel("Bandgap (eV)", size=20)
         ax.tick_params(labelsize=18)
         plt.tight_layout()
+        plt.show()
+        
         return
 
     def plotall(self, xlims=(0.32, 3.0)):
