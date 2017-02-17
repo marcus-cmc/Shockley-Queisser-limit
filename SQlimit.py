@@ -15,6 +15,7 @@ try:  # use seaborn to choose better colors
 except:  # if you don't have seaborn
     with_sns = False
 # plt.style.use(['ggplot','dark_background'])
+plt.ion()
 plt.style.use('ggplot')
 
 
@@ -59,7 +60,7 @@ class SQlim(object):
         self.EQE_EL = EQE_EL
         self.intensity = intensity
         self.Es = Es  # np.arange(0.32, 4.401, 0.002)
-        self.Calculate()
+        self.calculate()
         self.WLs = np.arange(280, 4001, 1.0)
         self.AM15nm = np.interp(self.WLs, WL, solar_per_nm)
 
@@ -77,7 +78,7 @@ class SQlim(object):
             return s + " [" + ", ".join(conditions) + "]" + ">"
         return s + " [standard]>"
 
-    def Calculate(self):
+    def calculate(self):
         self.J0 = self.cal_E_J0()  # dark saturation current density
         self.Jsc = self.cal_E_Jsc()  # shor-circuit current density
         self.Voc = self.cal_E_Voc()  # open circuit voltage
@@ -257,6 +258,7 @@ class SQlim(object):
             ax[axs[i]].tick_params(labelsize=12)
         ax[(0, 0)].set_xlim(xlims)
         plt.tight_layout()
+        plt.show()
         return
 
     def E_loss(self, Eg, xmin=300, xmax=2500, savefig=False):
@@ -408,7 +410,8 @@ class SQlim(object):
         for n, Eg in enumerate(Egs[:-1]):
             color = colors[n]
             if E_MPP:
-                SQ_E = SQlim(intensity=(Jscs[n]-Jscs[n+1]) / Jscs[n])
+                SQ_E = SQlim(intensity=(Jscs[n]-Jscs[n+1]) / Jscs[n],
+                             T=self.T, EQE_EL=self.EQE_EL)
                 para = SQ_E.get_paras(Eg, toPrint=False)
                 factor = para["Voc"] * para["FF"] / 100.0 / Eg
             mask = ((1240.0/WLs) >= Eg) * (Egs[n+1] >= (1240.0/WLs))
